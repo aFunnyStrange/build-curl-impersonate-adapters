@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "repository": "https://github.com/OWNER/curl-impersonate.git",
+    "commit": "0000000000000000000000000000000000000000"
+  },
+  "python": {
+    "curlCffi": "replace-with-tested-version-or-constraint",
+    "scrapyCffi": "replace-with-tested-version-or-constraint"
+  },
+  "profiles": [
+    {
+      "semanticName": "browser-profile-name",
+      "nativeTarget": "browser_profile_name"
+    }
+  ],
+  "artifacts": [
+    {
+      "role": "profile-overlay",
+      "path": "profile/browser_profile.inc",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "role": "native-wrapper",
+      "platform": "windows-amd64",
+      "pythonAbi": "cp312",
+      "path": "artifacts/windows-amd64/_wrapper.cp312-win_amd64.pyd",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "role": "runtime-library",
+      "platform": "windows-amd64",
+      "pythonAbi": "cp312",
+      "path": "artifacts/windows-amd64/libcurl-impersonate.dll",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}

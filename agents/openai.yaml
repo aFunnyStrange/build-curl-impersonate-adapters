@@ -1,0 +1,4 @@
+interface:
+  display_name: "[Draft] Build curl-impersonate Adapters"
+  short_description: "Rebuild curl-impersonate for Python clients"
+  default_prompt: "Use $build-curl-impersonate-adapters to rebuild an authorized curl-impersonate profile and integrate it with curl_cffi and scrapy_cffi."

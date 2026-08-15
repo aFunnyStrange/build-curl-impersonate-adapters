@@ -1,0 +1,46 @@
+# Python Adapter Contract
+
+## Native activation
+
+The adapter must load the external extension as the module name expected by curl_cffi before any curl_cffi or
+scrapy_cffi import. It must:
+
+- locate only the current interpreter's supported extension suffix;
+- reject a missing or ambiguous wrapper;
+- add and retain a Windows DLL-directory handle when needed;
+- remove a partially inserted module after load failure;
+- preserve the original exception as the cause;
+- return the same activation record for the same directory;
+- reject a second backend directory in the same process.
+
+Do not unload and swap native backends in a running process. Use a new process for another generation.
+
+## Profile registry
+
+Own a stable semantic profile name separately from the native target name. Resolve at request time:
+
+```text
+semantic profile -> registered native target
+vendor impersonate name -> declared pass-through
+neither -> no implicit profile
+both -> configuration error
+```
+
+Registration does not select a default. Never shadow an official name with different behavior.
+
+## curl_cffi composition
+
+Wrap or inject the vendor `Session` and `AsyncSession`; do not reimplement connection pooling, cookies,
+redirects, callbacks, WebSockets, async multi, or error models. Close injected versus owned sessions according
+to an explicit ownership contract. Keep vendor version checks at construction/activation rather than every
+request when capabilities are stable.
+
+If the installed curl_cffi version changes its private target-registration logic, prefer the public API or a
+small version adapter. Treat reliance on a private global set as a prototype, not a stable release contract.
+
+## scrapy_cffi composition
+
+Keep scrapy_cffi an optional import. Build its normal request type and set only the resolved `impersonate`
+field. Verify the downloader transport uses the activated wrapper; request-object mapping alone is not enough.
+Check crawler settings that can overwrite browser headers, especially User-Agent. Do not fork the scheduler or
+downloader when a normal public request/transport seam is sufficient.

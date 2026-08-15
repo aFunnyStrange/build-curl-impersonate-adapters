@@ -1,0 +1,46 @@
+# Python bytecode and interpreter caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test, coverage, lint, and type-check caches
+.pytest_cache/
+.hypothesis/
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python packaging and native build output
+build/
+dist/
+.eggs/
+*.egg-info/
+*.pyd
+*.so
+*.dylib
+*.dll
+*.lib
+*.a
+
+# Sensitive capture and local evidence
+*.pcap
+*.pcapng
+*.keys.log
+.local/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

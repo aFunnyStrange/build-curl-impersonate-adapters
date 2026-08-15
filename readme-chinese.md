@@ -1,0 +1,48 @@
+# 构建 curl-impersonate 适配层
+
+> 状态：**draft-inactive（草稿，未激活）**。该工作流已经从一个真实读取的项目会话和仓库中蒸馏，
+> 但激活前仍需要一次独立前向使用和用户明确批准。
+
+这个 Skill 用于从官方 curl-impersonate 源码重构建自定义 TLS/H2/H3 profile，并让生成的原生后端
+可以被 curl_cffi 和可选的 scrapy_cffi 无缝使用。它重点处理源码锁、幂等 profile overlay、与
+Python ABI 匹配的 wrapper/libcurl 产物对、请求级 profile 选择，以及能够识别“Python 看似成功、
+实际仍加载另一套 libcurl”的分层验证。
+
+Skill 不保存抓包、TLS key log、Cookie、私有 URL、本机绝对路径或历史二进制；这些只能保留在
+项目本地忽略目录中。公开内容只记录可迁移流程、脱敏协议事实和已验证的故障经验。
+
+## 安装到 Codex
+
+草稿激活前不要安装。激活后，把完整源码目录链接到用户 Skill 目录，不要复制可编辑源码。
+
+Windows PowerShell：
+
+```powershell
+$skillsRoot = Join-Path $HOME ".agents\skills"
+$source = (Resolve-Path "<仓库根目录>\build-curl-impersonate-adapters").Path
+$link = Join-Path $skillsRoot "build-curl-impersonate-adapters"
+New-Item -ItemType Directory -Force -Path $skillsRoot | Out-Null
+if (Test-Path -LiteralPath $link) { throw "目标已存在：$link" }
+New-Item -ItemType Junction -Path $link -Target $source | Out-Null
+```
+
+macOS：
+
+```bash
+skills_root="$HOME/.agents/skills"
+source_dir="$(cd "<仓库根目录>/build-curl-impersonate-adapters" && pwd)"
+link_path="$skills_root/build-curl-impersonate-adapters"
+mkdir -p "$skills_root"
+if [ -e "$link_path" ] || [ -L "$link_path" ]; then echo "目标已存在：$link_path" >&2; exit 1; fi
+ln -s "$source_dir" "$link_path"
+```
+
+激活后可通过 `$build-curl-impersonate-adapters` 调用。CC Switch v3.13 或更高版本可以导入已链接的
+本地 Skill，但仍需检查目标 Agent 的格式、工具、权限和原生构建环境。
+
+## 资源
+
+- `SKILL.md`：源码、构建、适配、隐私和资格验证主流程。
+- `references/`：源码 overlay、抓包证据、原生打包、Python 适配、验证矩阵和历史经验。
+- `assets/integration-manifest.example.json`：可迁移的产物与证据清单模板。
+- `scripts/check_integration_readiness.py`：只读检查清单、路径、产物角色、ABI 配对和 SHA-256。
