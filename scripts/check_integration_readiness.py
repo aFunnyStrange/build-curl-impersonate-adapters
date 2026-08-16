@@ -17,6 +17,7 @@ REQUIRED_ROLES = {
     "runtime-library",
 }
 BUNDLE_ROLES = {"profile-manifest", "native-wrapper", "runtime-library"}
+HEADER_STRATEGIES = {"adapter-preset", "native-profile"}
 
 
 def sha256_file(path: Path) -> str:
@@ -54,8 +55,8 @@ def portable_path(root: Path, value: Any) -> Tuple[Optional[Path], Optional[str]
 def audit_manifest(root: Path, manifest: Dict[str, Any]) -> List[str]:
     """Return readiness errors without changing the project."""
     errors: List[str] = []
-    if manifest.get("schemaVersion") != 1:
-        errors.append("schemaVersion must equal 1")
+    if manifest.get("schemaVersion") != 2:
+        errors.append("schemaVersion must equal 2")
 
     source = manifest.get("source")
     if not isinstance(source, dict):
@@ -72,8 +73,25 @@ def audit_manifest(root: Path, manifest: Dict[str, Any]) -> List[str]:
     if not isinstance(python_config, dict) or not python_config.get("curlCffi"):
         errors.append("python.curlCffi must record the tested version/constraint")
 
+    required_context_values = manifest.get("requiredRequestContexts")
+    required_contexts: Set[str] = set()
+    if not isinstance(required_context_values, list) or not required_context_values:
+        errors.append("requiredRequestContexts must contain at least one context")
+    else:
+        for index, context in enumerate(required_context_values):
+            if not isinstance(context, str) or not context.strip():
+                errors.append(
+                    f"requiredRequestContexts[{index}] must be a non-empty string"
+                )
+            elif context in required_contexts:
+                errors.append(f"duplicate required request context: {context}")
+            else:
+                required_contexts.add(context)
+
     profiles = manifest.get("profiles")
     seen_semantic: Set[str] = set()
+    covered_contexts: Set[str] = set()
+    profile_implementations: List[Tuple[int, str, str]] = []
     if not isinstance(profiles, list) or not profiles:
         errors.append("profiles must contain at least one mapping")
     else:
@@ -83,6 +101,10 @@ def audit_manifest(root: Path, manifest: Dict[str, Any]) -> List[str]:
                 continue
             semantic = profile.get("semanticName")
             native = profile.get("nativeTarget")
+            request_context = profile.get("requestContext")
+            transport_identity = profile.get("transportIdentity")
+            header_strategy = profile.get("headerStrategy")
+            implementation_artifact = profile.get("implementationArtifact")
             if not isinstance(semantic, str) or not semantic.strip():
                 errors.append(f"profiles[{index}].semanticName is required")
             elif semantic in seen_semantic:
@@ -91,9 +113,30 @@ def audit_manifest(root: Path, manifest: Dict[str, Any]) -> List[str]:
                 seen_semantic.add(semantic)
             if not isinstance(native, str) or not native.strip():
                 errors.append(f"profiles[{index}].nativeTarget is required")
+            if not isinstance(request_context, str) or not request_context.strip():
+                errors.append(f"profiles[{index}].requestContext is required")
+            else:
+                covered_contexts.add(request_context)
+            if not isinstance(transport_identity, str) or not transport_identity.strip():
+                errors.append(f"profiles[{index}].transportIdentity is required")
+            if header_strategy not in HEADER_STRATEGIES:
+                errors.append(
+                    f"profiles[{index}].headerStrategy must be one of: "
+                    f"{', '.join(sorted(HEADER_STRATEGIES))}"
+                )
+            if not isinstance(implementation_artifact, str) or not implementation_artifact:
+                errors.append(f"profiles[{index}].implementationArtifact is required")
+            elif header_strategy in HEADER_STRATEGIES:
+                profile_implementations.append(
+                    (index, header_strategy, implementation_artifact)
+                )
+
+    for context in sorted(required_contexts - covered_contexts):
+        errors.append(f"required request context has no profile mapping: {context}")
 
     artifacts = manifest.get("artifacts")
     roles: Set[str] = set()
+    artifact_paths_by_role: Dict[str, Set[str]] = {}
     native_pairs: Set[Tuple[str, str, str]] = set()
     runtime_pairs: Set[Tuple[str, str, str]] = set()
     bundle_paths: Dict[Tuple[str, str], Dict[str, List[str]]] = {}
@@ -110,7 +153,10 @@ def audit_manifest(root: Path, manifest: Dict[str, Any]) -> List[str]:
             errors.append(f"artifacts[{index}].role is required")
             continue
         roles.add(role)
-        path, path_error = portable_path(root, artifact.get("path"))
+        artifact_value = artifact.get("path")
+        if isinstance(artifact_value, str):
+            artifact_paths_by_role.setdefault(role, set()).add(artifact_value)
+        path, path_error = portable_path(root, artifact_value)
         if path_error is not None:
             errors.append(f"artifacts[{index}]: {path_error}")
         elif path is not None and not path.is_file():
@@ -152,6 +198,18 @@ def audit_manifest(root: Path, manifest: Dict[str, Any]) -> List[str]:
     missing_roles = REQUIRED_ROLES - roles
     for role in sorted(missing_roles):
         errors.append(f"missing required artifact role: {role}")
+
+    implementation_roles = {
+        "adapter-preset": "context-preset",
+        "native-profile": "profile-overlay",
+    }
+    for index, strategy, implementation_path in profile_implementations:
+        expected_role = implementation_roles[strategy]
+        if implementation_path not in artifact_paths_by_role.get(expected_role, set()):
+            errors.append(
+                f"profiles[{index}].implementationArtifact must reference an "
+                f"artifact with role {expected_role}: {implementation_path}"
+            )
 
     wrapper_axes = {(platform, abi) for platform, abi, _ in native_pairs}
     runtime_axes = {(platform, abi) for platform, abi, _ in runtime_pairs}

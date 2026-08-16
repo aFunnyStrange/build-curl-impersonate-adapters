@@ -7,6 +7,7 @@ Use this reference to diagnose integration failures without case-specific histor
 | A dependency edit disappears after a clean build | Generated dependency tree was edited directly | Move the change into a versioned patch, overlay, or build hook; rebuild from a clean checkout and prove the change is reapplied. |
 | A capture exists but encrypted HTTP/2 or HTTP/3 fields cannot be inspected | No matching session key log was retained | Repeat the authorized capture with a matching session key log. Do not infer encrypted fields from another session. |
 | Navigation headers, resource headers, or protocol versions differ | Evidence from different request classes was merged | Preserve request role and protocol as separate dimensions; compare only equivalent requests. |
+| A JSON/API URL still emits document-navigation headers | The URL was opened as navigation rather than fetched by page code | Capture a real fetch/XHR flow and model its origin relationship, method/body, headers, and ordering separately. |
 | One JA3, JA4, or Akamai value matches | A partial fingerprint is being treated as an oracle | Require TLS, protocol, header, runtime-backend, package-content, and framework evidence. |
 | Python accepts a profile name but behavior remains unchanged | Metadata support exists without native support | Trace the requested profile into the loaded native backend and verify observable wire behavior. |
 | A wheel contains the intended wrapper but imports another runtime | Packaging and import resolution disagree | Inspect a clean installation, identify the loaded native module and runtime library, and fail closed on mismatches. |
@@ -14,6 +15,7 @@ Use this reference to diagnose integration failures without case-specific histor
 | A native build fails only under a wrapper or constrained shell | Tool discovery, environment propagation, or subprocess handling is broken | Discover toolchain programs explicitly, scope environment changes, preserve exit codes, and rebuild cleanly. |
 | The external wrapper is activated after vendor imports | Backend selection happened too late | Activate it before vendor imports and expose the process-global backend identity for diagnostics. |
 | Each Chrome profile produces its own wrapper/runtime directory | Profile identity was incorrectly treated as an ABI axis | Merge compatible overlays into one build and one native directory; keep request-time profile selection above the process-global backend. |
+| A request changes `impersonate` but no new TLS handshake occurs | A connection pool was reused across native targets | Bind the pool or Session to an immutable resolved target/transport identity and repeat the validation on isolated connections. |
 | A crawler accepts impersonation options but behavior is unchanged | Request mapping exists without a real transport bridge | Route requests through the adapted transport and prove direct and framework calls use the same backend. |
 | A checker fails because an evidence endpoint is temporarily unavailable | External evidence dependency is unavailable | Use one bounded rerun or an approved equivalent; do not add unbounded retries or weaken unrelated gates. |
 

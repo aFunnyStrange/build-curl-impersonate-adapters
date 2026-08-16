@@ -30,6 +30,11 @@ runtime library, wheel, or archive per profile. Profile selection belongs to eac
 selection belongs to process startup. Separate bundles are valid only for different platform/architecture/ABI
 axes, not for browser versions or aliases.
 
+The manifest must also bind each alias to a request context, header strategy, and transport identity. Several
+context variants may share transport fields or even one native target, but they remain explicit validation
+rows rather than one falsely universal browser profile. Bind every row to its hashed native overlay or adapter
+preset artifact so declared coverage cannot exceed packaged implementation.
+
 ## Prove the loaded backend
 
 Use platform inspection (`dumpbin`, `llvm-objdump`, `objdump`, `readelf`, `otool`, or equivalent) to prove the

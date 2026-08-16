@@ -12,6 +12,11 @@ For one platform, architecture, and Python ABI, every compatible browser profile
 runtime and packaged as one wrapper/runtime/manifest directory. curl_cffi and scrapy_cffi configure that one
 directory at process startup and select profiles per request; profile-specific native packages are rejected.
 
+Completeness is workload-specific: navigation, fetch/XHR, subresources, preflight, forms, and WebSocket
+handshakes are separate request contexts rather than one universal browser header template. The manifest must
+declare required contexts and their coverage. Connection pools must remain bound to one resolved native
+transport/profile so a later request cannot reuse an incompatible TLS connection.
+
 It deliberately excludes captures, TLS key logs, cookies, private URLs, credentials, task transcripts,
 workstation paths, and native binaries. The Skill records only portable workflows and generic failure gates.
 
@@ -49,8 +54,8 @@ environment must still be reviewed.
 ## Resources
 
 - `SKILL.md`: core source, build, adapter, privacy, and qualification workflow.
-- `references/`: source overlay, capture evidence, native packaging, Python adapter, validation, and generic
-  failure/recovery gates.
+- `references/`: source overlay, request-context/pooling, capture evidence, native packaging, Python adapter,
+  validation, and generic failure/recovery gates.
 - `assets/integration-manifest.example.json`: portable artifact/evidence manifest template.
 - `scripts/check_integration_readiness.py`: read-only manifest, path, single-bundle cardinality, ABI, and
   SHA-256 checker.

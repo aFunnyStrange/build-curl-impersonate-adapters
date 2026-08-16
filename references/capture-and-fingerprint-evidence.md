@@ -31,6 +31,11 @@ identity, and whether each field was observed or inherited. Extract:
 - HTTP/3 transport parameters when claimed;
 - navigation/resource/prefetch/cache differences and protocol-specific forbidden headers.
 
+Treat address-bar navigation, link navigation, same-origin fetch/XHR, cross-origin fetch/XHR, preflight,
+subresources, forms, and WebSocket handshakes as distinct evidence classes. An API-shaped URL opened as a
+document remains navigation evidence. Record whether the stream reused a connection; header evidence from a
+reused stream must not be presented as a newly observed TLS handshake.
+
 Do not use a static-resource request as navigation evidence. Do not combine HTTP/1.1 navigation headers with
 HTTP/2 resource behavior without declaring the approximation. If one profile structure cannot express
 protocol/request-type variants, record the limitation instead of claiming exactness.

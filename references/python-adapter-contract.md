@@ -30,6 +30,21 @@ both -> configuration error
 Load all mappings from the bundle's manifest during one-time activation. Registration does not select a
 default and must not be repeated per request. Never shadow an official name with different behavior.
 
+Each mapping must declare its transport identity, request context, and header strategy. Resolve those fields
+before selecting a Session or pool. Keep context presets separate from native-target aliases even when both
+are exposed through one convenience API.
+
+## Session and pool identity
+
+Do not use one connection pool across different resolved native targets merely because requests share a host.
+Key cached Sessions/pools by the resolved native target or an equivalent immutable transport identity, in
+addition to the framework's existing proxy/origin/certificate dimensions. If the framework cannot expose a
+safe pool key, bind a Session to the first target and reject a later change.
+
+Multiple request contexts may reuse one pool only when they share the same proven transport identity and the
+adapter changes request headers without switching connection-level behavior. Test this boundary with reused
+HTTP/2 or HTTP/3 connections; a successful response alone is insufficient.
+
 ## curl_cffi composition
 
 Wrap or inject the vendor `Session` and `AsyncSession`; do not reimplement connection pooling, cookies,
@@ -43,6 +58,7 @@ small version adapter. Treat reliance on a private global set as a prototype, no
 ## scrapy_cffi composition
 
 Keep scrapy_cffi an optional import. Build its normal request type and set only the resolved `impersonate`
-field. Verify the downloader transport uses the activated wrapper; request-object mapping alone is not enough.
-Check crawler settings that can overwrite browser headers, especially User-Agent. Do not fork the scheduler or
-downloader when a normal public request/transport seam is sufficient.
+field plus an explicitly supported request-context preset when applicable. Verify the downloader transport
+uses the activated wrapper and a profile-safe pool; request-object mapping alone is not enough. Check crawler
+settings that can overwrite browser headers, especially User-Agent. Do not fork the scheduler or downloader
+when a normal public request/transport seam is sufficient.

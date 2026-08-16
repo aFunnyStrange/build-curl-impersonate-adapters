@@ -12,6 +12,10 @@ Python ABI 匹配的单一 wrapper/libcurl 多 profile 产物包、一个 native
 runtime，只打包一套 wrapper、runtime library 和共享 profile manifest。禁止按 Chrome 版本或
 profile 分目录打包；curl_cffi 和 scrapy_cffi 只配置一个 native 目录，再由每个请求选择 profile。
 
+“完整”必须相对于项目工作场景声明：导航、fetch/XHR、子资源、预检、表单和 WebSocket 握手不是
+同一套通用请求头。Manifest 必须声明所需场景及其覆盖关系；连接池必须绑定一个确定的 native
+transport/profile，避免后续请求复用到另一个 profile 已建立的 TLS 连接。
+
 Skill 不保存抓包、TLS key log、Cookie、私有 URL、凭证、任务会话、本机绝对路径或原生二进制。
 公开内容只记录可迁移流程、通用协议约束和故障恢复门禁。
 
@@ -47,6 +51,7 @@ ln -s "$source_dir" "$link_path"
 ## 资源
 
 - `SKILL.md`：源码、构建、适配、隐私和资格验证主流程。
-- `references/`：源码 overlay、抓包证据、原生打包、Python 适配、验证矩阵和通用故障恢复门禁。
+- `references/`：源码 overlay、请求场景与连接池、抓包证据、原生打包、Python 适配、验证矩阵和
+  通用故障恢复门禁。
 - `assets/integration-manifest.example.json`：可迁移的产物与证据清单模板。
 - `scripts/check_integration_readiness.py`：只读检查清单、路径、单一产物包基数、ABI 和 SHA-256。

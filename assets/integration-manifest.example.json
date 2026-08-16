@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "source": {
     "repository": "https://github.com/OWNER/curl-impersonate.git",
     "commit": "0000000000000000000000000000000000000000"
@@ -8,25 +8,55 @@
     "curlCffi": "replace-with-tested-version-or-constraint",
     "scrapyCffi": "replace-with-tested-version-or-constraint"
   },
+  "requiredRequestContexts": [
+    "navigation",
+    "fetch-same-origin",
+    "fetch-cross-origin",
+    "cors-preflight"
+  ],
   "profiles": [
     {
-      "semanticName": "browser-profile-name",
-      "nativeTarget": "browser_profile_name"
+      "semanticName": "browser-navigation",
+      "nativeTarget": "browser_navigation",
+      "transportIdentity": "browser-family-platform",
+      "requestContext": "navigation",
+      "headerStrategy": "native-profile",
+      "implementationArtifact": "profile/browser_navigation.inc"
     },
     {
-      "semanticName": "another-browser-profile",
-      "nativeTarget": "another_browser_profile"
+      "semanticName": "browser-fetch-same-origin",
+      "nativeTarget": "browser_fetch_same_origin",
+      "transportIdentity": "browser-family-platform",
+      "requestContext": "fetch-same-origin",
+      "headerStrategy": "native-profile",
+      "implementationArtifact": "profile/browser_fetch_and_preflight.inc"
+    },
+    {
+      "semanticName": "browser-fetch-cross-origin",
+      "nativeTarget": "browser_fetch_cross_origin",
+      "transportIdentity": "browser-family-platform",
+      "requestContext": "fetch-cross-origin",
+      "headerStrategy": "native-profile",
+      "implementationArtifact": "profile/browser_fetch_and_preflight.inc"
+    },
+    {
+      "semanticName": "browser-cors-preflight",
+      "nativeTarget": "browser_cors_preflight",
+      "transportIdentity": "browser-family-platform",
+      "requestContext": "cors-preflight",
+      "headerStrategy": "native-profile",
+      "implementationArtifact": "profile/browser_fetch_and_preflight.inc"
     }
   ],
   "artifacts": [
     {
       "role": "profile-overlay",
-      "path": "profile/browser_profile.inc",
+      "path": "profile/browser_navigation.inc",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     {
       "role": "profile-overlay",
-      "path": "profile/another_browser_profile.inc",
+      "path": "profile/browser_fetch_and_preflight.inc",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     {

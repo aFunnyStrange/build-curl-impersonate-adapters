@@ -1,6 +1,6 @@
 ---
 name: build-curl-impersonate-adapters
-description: DRAFT/INACTIVE. Rebuild an authorized curl-impersonate source tree with versioned browser/TLS profile overlays, compile all compatible profiles into one ABI-matched native backend bundle per target, and add a request-scoped compatibility adapter for curl_cffi and scrapy_cffi. Use when creating or updating custom impersonation profiles from owned captures, diagnosing a false Python/native integration, building Windows/Linux artifacts, or validating that custom and vendor profiles coexist behind one native directory without forking application code.
+description: DRAFT/INACTIVE. Rebuild an authorized curl-impersonate source tree with versioned browser/TLS profile overlays, compile compatible transport and request-context profiles into one ABI-matched native backend bundle per target, and add a connection-safe compatibility adapter for curl_cffi and scrapy_cffi. Use when creating custom impersonation behavior from owned captures, separating navigation, fetch/XHR, subresource, preflight, or WebSocket scenarios, diagnosing false Python/native integration or connection reuse, building Windows/Linux artifacts, or validating that profiles coexist behind one native directory without forking application code.
 ---
 
 # Build curl-impersonate Adapters
@@ -29,6 +29,7 @@ Before editing, record:
 - authoritative curl-impersonate repository URL and exact commit/tag;
 - upstream curl/BoringSSL/nghttp2/ngtcp2/nghttp3 inputs selected by that revision;
 - the complete requested profile set, with each semantic name and native target name;
+- the required request-context matrix and which scenarios are intentionally unsupported;
 - capture browser version, OS/architecture, request type, protocol, and authorization basis;
 - target OS, architecture, libc where applicable, Python implementation/ABI, and build toolchain;
 - exact curl_cffi and optional scrapy_cffi versions and supported constraints;
@@ -50,6 +51,11 @@ not make curl_cffi or scrapy_cffi select native directories per request. Activat
 process; select one compiled native target per request through `impersonate` or a semantic alias. If requested
 profiles cannot coexist in one runtime, fail and report the native conflict instead of silently shipping
 profile-sharded backends.
+
+Keep transport identity separate from request context. A browser-family/version transport can support several
+navigation, fetch/XHR, subresource, preflight, form, or WebSocket scenarios whose headers and ordering differ.
+Read [request-context-and-pooling.md](references/request-context-and-pooling.md) before declaring profile
+coverage or designing Session reuse.
 
 ## Select the integration route
 
@@ -84,7 +90,8 @@ Fail if the insertion anchor or upstream source contract changed; never silently
 
 Treat the ordered profile set, every overlay, upstream commit, toolchain, and dependency lock as one candidate
 identity. Apply the whole profile set before compilation and rebuild it from one clean source/build directory
-before promotion.
+before promotion. Bind every declared request-context row to a hashed native overlay or adapter preset included
+in the candidate manifest; an alias alone is not implementation evidence.
 
 ## Extract and model an authorized profile
 
@@ -96,7 +103,8 @@ Read [capture-and-fingerprint-evidence.md](references/capture-and-fingerprint-ev
 - navigation headers from resource, prefetch, cached, authenticated, or protocol-specific headers;
 - directly observed fields from values inherited from the nearest official baseline.
 
-Do not hard-code cookies, session data, or one connection's GREASE/extension order. A capture without its
+Do not hard-code cookies, session data, or one connection's GREASE/extension order. Do not label a navigation
+capture as a generic API/fetch profile merely because the response is JSON. A capture without its
 same-session TLS key log cannot prove encrypted HTTP/2/HTTP/3 headers or SETTINGS. A single JA3, JA4, Akamai
 hash, User-Agent, or HTTP 200 response cannot prove profile fidelity.
 
@@ -128,6 +136,12 @@ Keep scrapy_cffi optional and lazily imported; return its normal request type wi
 Do not let crawler defaults silently overwrite profile headers such as User-Agent. Resolve this explicitly in
 project settings or the adapter contract.
 
+Bind every reusable connection pool to one resolved native transport/profile identity. Include that identity
+in the Session/pool cache key, or reject attempts to change it after the Session establishes a connection. Do
+not assume a per-request `impersonate` change creates a new TLS connection. Request contexts may share a pool
+only when they resolve to the same transport identity and vary headers without changing connection-level
+behavior.
+
 ## Validate by layers
 
 Follow [validation-matrix.md](references/validation-matrix.md) and generic recovery gates in
@@ -137,13 +151,14 @@ Follow [validation-matrix.md](references/validation-matrix.md) and generic recov
 2. overlay idempotency and clean rebuild;
 3. native CLI and direct `curl_easy_impersonate` target probe;
 4. wrapper import table, ABI, adjacent-library resolution, and native version;
-5. multiple custom profiles, their native names, an official profile, and the no-profile path through the same
-   directory, process, and Session;
+5. every declared request context, multiple custom native names, an official profile, and the no-profile path
+   through the same native directory and process;
 6. synchronous and asynchronous curl_cffi flows;
-7. scrapy_cffi request mapping and one real downloader transport flow when supported;
-8. clean-environment install on every declared platform/interpreter row;
-9. exactly one wrapper/runtime pair and one shared profile manifest for each target axis;
-10. artifact hashes, redaction scan, cleanup, and unsupported cells.
+7. connection-pool isolation for different resolved native targets and safe reuse for the same transport;
+8. scrapy_cffi request-context mapping and one real downloader transport flow per required scenario;
+9. clean-environment install on every declared platform/interpreter row;
+10. exactly one wrapper/runtime pair and one shared profile manifest for each target axis;
+11. artifact hashes, redaction scan, cleanup, and unsupported cells.
 
 Record variable fingerprints rather than forcing a fixed JA3 assertion. Compare multiple protocol fields and
 the capture-derived invariants. Classify transient checker/network failures before one bounded manual rerun;
