@@ -6,13 +6,13 @@
 | --- | --- |
 | Source | remote, exact commit/tag, clean state, dependency locks, license |
 | Baseline | official build, feature check, native request/probe |
-| Overlay | anchor verification, idempotency, clean rebuild, profile source hash |
-| Native | CLI request, custom/official probes, TLS/H2/H3 fields as claimed |
-| Binding | wrapper imports intended library, ABI suffix, loader path, native version |
-| Adapter unit | alias mapping, pass-through, conflict, no default, import-order rejection |
-| curl_cffi | sync, async, custom semantic/native, official, plain, cleanup |
+| Overlay | all requested profiles applied together, anchor verification, idempotency, clean rebuild, profile-set hash |
+| Native | one runtime exposes every custom/official target; CLI probes and TLS/H2/H3 fields as claimed |
+| Binding | exactly one wrapper/runtime pair per target axis, shared directory, ABI suffix, loader path, native version |
+| Adapter unit | one-directory activation, bulk alias mapping, pass-through, conflict, no default, import-order rejection |
+| curl_cffi | sync/async profile switching in one process and Session, custom semantic/native, official, plain, cleanup |
 | scrapy_cffi | normal request mapping plus real transport request and close |
-| Distribution | clean install for every declared OS/Python/arch/libc row |
+| Distribution | one consolidated multi-profile bundle for every declared OS/Python/arch/libc row; clean install |
 | Privacy | no captures, key logs, cookies, tokens, private URLs/paths, build caches |
 
 Separate deterministic checks from live network evidence. One TLS checker may close a connection or return a

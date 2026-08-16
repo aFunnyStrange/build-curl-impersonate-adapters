@@ -1,16 +1,19 @@
 # Build curl-impersonate Adapters
 
-> Status: **draft-inactive**. The workflow was distilled from one retrieved real project task and repository,
-> but still needs an independent forward use and explicit activation approval.
+> Status: **draft-inactive**. This public Skill contains only reusable workflow contracts, validation gates,
+> and generic examples. It still needs an independent forward use and explicit activation approval.
 
 This Skill rebuilds an authorized curl-impersonate source tree with a custom TLS/H2/H3 profile and integrates
 the resulting native backend with curl_cffi and optional scrapy_cffi. It focuses on reproducible source locks,
-idempotent profile overlays, ABI-matched wrapper/runtime pairs, request-scoped profile selection, and layered
-validation that detects false Python/native integrations.
+idempotent multi-profile overlays, exactly one ABI-matched backend bundle per target, request-scoped profile
+selection through one native directory, and layered validation that detects false Python/native integrations.
 
-It deliberately excludes captures, TLS key logs, cookies, private URLs, workstation paths, and historical
-native binaries. Those remain private project evidence. The Skill records only portable workflows and
-sanitized failure lessons.
+For one platform, architecture, and Python ABI, every compatible browser profile must be compiled into one
+runtime and packaged as one wrapper/runtime/manifest directory. curl_cffi and scrapy_cffi configure that one
+directory at process startup and select profiles per request; profile-specific native packages are rejected.
+
+It deliberately excludes captures, TLS key logs, cookies, private URLs, credentials, task transcripts,
+workstation paths, and native binaries. The Skill records only portable workflows and generic failure gates.
 
 ## Install for Codex
 
@@ -46,7 +49,8 @@ environment must still be reviewed.
 ## Resources
 
 - `SKILL.md`: core source, build, adapter, privacy, and qualification workflow.
-- `references/`: source overlay, capture evidence, native packaging, Python adapter, validation, and retrieved
-  historical lessons.
+- `references/`: source overlay, capture evidence, native packaging, Python adapter, validation, and generic
+  failure/recovery gates.
 - `assets/integration-manifest.example.json`: portable artifact/evidence manifest template.
-- `scripts/check_integration_readiness.py`: read-only manifest, path, role, ABI-pair, and SHA-256 checker.
+- `scripts/check_integration_readiness.py`: read-only manifest, path, single-bundle cardinality, ABI, and
+  SHA-256 checker.

@@ -14,22 +14,29 @@ not pass on the same host.
 Keep build and install directories disposable and separate from editable overlay inputs. Do not preserve a
 successful change only inside `build/**/deps/src/...`; a clean build will erase it.
 
-## Overlay contract
+## Multi-profile overlay contract
 
-Prefer an idempotent overlay when repository policy forbids or gates direct edits to maintained patchsets. The
-overlay should:
+Prefer an idempotent overlay set when repository policy forbids or gates direct edits to maintained patchsets.
+The overlay set should:
 
 - run after official patches and before compilation;
 - verify the exact source file and a stable insertion anchor;
 - detect an already-present target and exit successfully;
 - fail closed when the target name conflicts or the anchor changes;
-- inject a standalone, reviewable profile fragment;
-- be included in the candidate hash/manifest.
+- inject each profile from a standalone, reviewable fragment;
+- reject duplicate native targets and conflicting semantic aliases;
+- apply all requested compatible profiles before one compilation;
+- emit one ordered profile-set identity included in the candidate manifest.
+
+Never run a separate full build merely because another Chrome version or site-specific profile is requested.
+For a fixed target axis, the clean build must contain the union of all compatible profile fragments. If two
+fragments require incompatible process-global native behavior, stop and report the conflict; do not turn
+profile choice into native-directory choice.
 
 After proving the candidate, follow the repository's maintainer workflow to convert or integrate the change.
 Do not edit a protected patch file without the required user/maintainer confirmation.
 
-## Windows lessons
+## Windows build requirements
 
 - Enter the intended Visual Studio developer environment explicitly; a normal PowerShell may not expose
   compiler, linker, CMake generator, or Windows SDK tools.
@@ -44,7 +51,7 @@ The DLL import library can be much smaller than a static library. Link the wrapp
 the intended package uses a neighboring DLL; choosing the static archive may require every transitive library
 and can accidentally embed a second backend.
 
-## Linux/WSL/macOS lessons
+## Linux/WSL/macOS build requirements
 
 - Use the platform's native compiler and a venv; do not mix Windows build tools into WSL/Linux.
 - Keep large intermediate builds on a native filesystem when mounted-drive performance or semantics are poor.
@@ -54,5 +61,6 @@ and can accidentally embed a second backend.
 
 ## Rebuild gate
 
-Promotion requires a clean build from the locked source plus overlay, not only an incremental re-link of a
-generated source tree. Compare the clean outputs with the candidate manifest and rerun native/Python tests.
+Promotion requires one clean build from the locked source plus the complete overlay set, not incremental
+per-profile relinks of a generated source tree. Compare the clean outputs and profile-set identity with the
+candidate manifest and rerun native/Python tests.

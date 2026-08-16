@@ -2,8 +2,8 @@
 
 ## Native activation
 
-The adapter must load the external extension as the module name expected by curl_cffi before any curl_cffi or
-scrapy_cffi import. It must:
+The adapter must accept exactly one native directory for the process and load its external extension as the
+module name expected by curl_cffi before any curl_cffi or scrapy_cffi import. It must:
 
 - locate only the current interpreter's supported extension suffix;
 - reject a missing or ambiguous wrapper;
@@ -13,7 +13,8 @@ scrapy_cffi import. It must:
 - return the same activation record for the same directory;
 - reject a second backend directory in the same process.
 
-Do not unload and swap native backends in a running process. Use a new process for another generation.
+Do not unload and swap native backends in a running process. Use a new process for another generation. Never
+choose a native directory from the request's profile name.
 
 ## Profile registry
 
@@ -26,7 +27,8 @@ neither -> no implicit profile
 both -> configuration error
 ```
 
-Registration does not select a default. Never shadow an official name with different behavior.
+Load all mappings from the bundle's manifest during one-time activation. Registration does not select a
+default and must not be repeated per request. Never shadow an official name with different behavior.
 
 ## curl_cffi composition
 

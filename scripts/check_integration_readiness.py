@@ -10,7 +10,13 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
-REQUIRED_ROLES = {"profile-overlay", "native-wrapper", "runtime-library"}
+REQUIRED_ROLES = {
+    "profile-manifest",
+    "profile-overlay",
+    "native-wrapper",
+    "runtime-library",
+}
+BUNDLE_ROLES = {"profile-manifest", "native-wrapper", "runtime-library"}
 
 
 def sha256_file(path: Path) -> str:
@@ -90,6 +96,7 @@ def audit_manifest(root: Path, manifest: Dict[str, Any]) -> List[str]:
     roles: Set[str] = set()
     native_pairs: Set[Tuple[str, str, str]] = set()
     runtime_pairs: Set[Tuple[str, str, str]] = set()
+    bundle_paths: Dict[Tuple[str, str], Dict[str, List[str]]] = {}
     if not isinstance(artifacts, list) or not artifacts:
         errors.append("artifacts must contain manifest-bound files")
         return errors
@@ -119,7 +126,7 @@ def audit_manifest(root: Path, manifest: Dict[str, Any]) -> List[str]:
                     f"artifacts[{index}] hash mismatch: expected {expected}, got {actual}"
                 )
 
-        if role in {"native-wrapper", "runtime-library"}:
+        if role in BUNDLE_ROLES:
             platform = artifact.get("platform")
             python_abi = artifact.get("pythonAbi")
             if not isinstance(platform, str) or not platform:
@@ -127,11 +134,20 @@ def audit_manifest(root: Path, manifest: Dict[str, Any]) -> List[str]:
             if not isinstance(python_abi, str) or not python_abi:
                 errors.append(f"artifacts[{index}].pythonAbi is required for {role}")
             if isinstance(platform, str) and isinstance(python_abi, str):
+                axis = (platform, python_abi)
+                role_paths = bundle_paths.setdefault(axis, {})
+                role_paths.setdefault(role, []).append(str(artifact.get("path", "")))
                 key = (platform, python_abi, role)
                 if role == "native-wrapper":
                     native_pairs.add(key)
-                else:
+                elif role == "runtime-library":
                     runtime_pairs.add(key)
+            for forbidden_key in ("profile", "semanticName", "nativeTarget"):
+                if forbidden_key in artifact:
+                    errors.append(
+                        f"artifacts[{index}].{forbidden_key} must not scope {role} "
+                        "to one profile"
+                    )
 
     missing_roles = REQUIRED_ROLES - roles
     for role in sorted(missing_roles):
@@ -143,6 +159,23 @@ def audit_manifest(root: Path, manifest: Dict[str, Any]) -> List[str]:
         errors.append(f"native wrapper has no runtime-library pair: {axis[0]}/{axis[1]}")
     for axis in sorted(runtime_axes - wrapper_axes):
         errors.append(f"runtime library has no native-wrapper pair: {axis[0]}/{axis[1]}")
+
+    for axis, role_paths in sorted(bundle_paths.items()):
+        selected_paths: List[str] = []
+        for role in sorted(BUNDLE_ROLES):
+            paths = role_paths.get(role, [])
+            if len(paths) != 1:
+                errors.append(
+                    f"{axis[0]}/{axis[1]} must contain exactly one {role}; "
+                    f"found {len(paths)}"
+                )
+            elif paths[0]:
+                selected_paths.append(paths[0])
+        parents = {Path(path).parent.as_posix() for path in selected_paths}
+        if len(selected_paths) == len(BUNDLE_ROLES) and len(parents) != 1:
+            errors.append(
+                f"{axis[0]}/{axis[1]} bundle artifacts must share one native directory"
+            )
     return errors
 
 

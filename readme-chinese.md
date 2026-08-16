@@ -1,15 +1,19 @@
 # 构建 curl-impersonate 适配层
 
-> 状态：**draft-inactive（草稿，未激活）**。该工作流已经从一个真实读取的项目会话和仓库中蒸馏，
-> 但激活前仍需要一次独立前向使用和用户明确批准。
+> 状态：**draft-inactive（草稿，未激活）**。这个公开 Skill 只包含可复用的工作流约束、验证门禁和
+> 通用示例；激活前仍需要一次独立前向使用和用户明确批准。
 
 这个 Skill 用于从官方 curl-impersonate 源码重构建自定义 TLS/H2/H3 profile，并让生成的原生后端
 可以被 curl_cffi 和可选的 scrapy_cffi 无缝使用。它重点处理源码锁、幂等 profile overlay、与
-Python ABI 匹配的 wrapper/libcurl 产物对、请求级 profile 选择，以及能够识别“Python 看似成功、
-实际仍加载另一套 libcurl”的分层验证。
+Python ABI 匹配的单一 wrapper/libcurl 多 profile 产物包、一个 native 目录内的请求级 profile
+选择，以及能够识别“Python 看似成功、实际仍加载另一套 libcurl”的分层验证。
 
-Skill 不保存抓包、TLS key log、Cookie、私有 URL、本机绝对路径或历史二进制；这些只能保留在
-项目本地忽略目录中。公开内容只记录可迁移流程、脱敏协议事实和已验证的故障经验。
+同一平台、架构和 Python ABI 下，所有兼容的 Chrome/浏览器 profile 必须一次编译进同一个原生
+runtime，只打包一套 wrapper、runtime library 和共享 profile manifest。禁止按 Chrome 版本或
+profile 分目录打包；curl_cffi 和 scrapy_cffi 只配置一个 native 目录，再由每个请求选择 profile。
+
+Skill 不保存抓包、TLS key log、Cookie、私有 URL、凭证、任务会话、本机绝对路径或原生二进制。
+公开内容只记录可迁移流程、通用协议约束和故障恢复门禁。
 
 ## 安装到 Codex
 
@@ -43,6 +47,6 @@ ln -s "$source_dir" "$link_path"
 ## 资源
 
 - `SKILL.md`：源码、构建、适配、隐私和资格验证主流程。
-- `references/`：源码 overlay、抓包证据、原生打包、Python 适配、验证矩阵和历史经验。
+- `references/`：源码 overlay、抓包证据、原生打包、Python 适配、验证矩阵和通用故障恢复门禁。
 - `assets/integration-manifest.example.json`：可迁移的产物与证据清单模板。
-- `scripts/check_integration_readiness.py`：只读检查清单、路径、产物角色、ABI 配对和 SHA-256。
+- `scripts/check_integration_readiness.py`：只读检查清单、路径、单一产物包基数、ABI 和 SHA-256。

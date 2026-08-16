@@ -1,6 +1,6 @@
 ---
 name: build-curl-impersonate-adapters
-description: DRAFT/INACTIVE. Rebuild an authorized curl-impersonate source tree with a versioned browser/TLS profile overlay, package ABI-matched native libcurl and curl_cffi wrappers, and add a request-scoped compatibility adapter for curl_cffi and scrapy_cffi. Use when creating or updating a custom impersonation profile from owned captures, diagnosing a false Python/native integration, building Windows/Linux artifacts, or validating that custom and vendor profiles coexist without forking application code.
+description: DRAFT/INACTIVE. Rebuild an authorized curl-impersonate source tree with versioned browser/TLS profile overlays, compile all compatible profiles into one ABI-matched native backend bundle per target, and add a request-scoped compatibility adapter for curl_cffi and scrapy_cffi. Use when creating or updating custom impersonation profiles from owned captures, diagnosing a false Python/native integration, building Windows/Linux artifacts, or validating that custom and vendor profiles coexist behind one native directory without forking application code.
 ---
 
 # Build curl-impersonate Adapters
@@ -12,13 +12,15 @@ explicitly authorized traffic and endpoints. Do not use TLS fingerprint work to 
 account restrictions, or third-party protections. Protocol resemblance is not browser identity and does not
 prove that a client is undetectable.
 
-Classify facts as `verified-repository`, `verified-official`, `verified-history`, `user-confirmed`, or
-`hypothesis`. Use current official upstream documentation and source when selecting repositories, versions,
-build commands, APIs, or supported targets. Historical values prove only the recorded candidates.
+Classify facts as `verified-repository`, `verified-official`, `user-confirmed`, or `hypothesis`. Use current
+official upstream documentation and source when selecting repositories, versions, build commands, APIs, or
+supported targets. Revalidate every source revision, platform, ABI, package version, and runtime claim in the
+current project.
 
-Never place packet captures, TLS key logs, cookies, authorization headers, private URLs, workstation paths,
-tool installations, or raw decrypted requests in the Skill or public project documentation. Store sensitive
-evidence in an ignored project-local directory and publish only bounded, redacted protocol facts.
+Never place task titles or transcripts, usernames, machine paths, hostnames, packet captures, TLS key logs,
+cookies, authorization headers, credentials, private URLs, tool installations, or raw decrypted requests in
+the Skill or public project documentation. Store sensitive evidence in an ignored project-local directory and
+publish only reusable workflow rules and bounded, redacted protocol facts.
 
 ## Fix the integration identity
 
@@ -26,7 +28,7 @@ Before editing, record:
 
 - authoritative curl-impersonate repository URL and exact commit/tag;
 - upstream curl/BoringSSL/nghttp2/ngtcp2/nghttp3 inputs selected by that revision;
-- custom profile semantic name and native target name;
+- the complete requested profile set, with each semantic name and native target name;
 - capture browser version, OS/architecture, request type, protocol, and authorization basis;
 - target OS, architecture, libc where applicable, Python implementation/ABI, and build toolchain;
 - exact curl_cffi and optional scrapy_cffi versions and supported constraints;
@@ -36,10 +38,24 @@ Keep product, protocol, and ABI identities independent. Do not infer wrapper com
 filename or library version string. Read [source-build-and-overlay.md](references/source-build-and-overlay.md)
 for source locks, baseline builds, overlays, and platform toolchains.
 
+## Enforce one backend bundle per target
+
+Treat `OS + architecture + libc/toolchain boundary + Python ABI` as the native artifact axis. Profile names are
+not artifact axes. For each target axis, apply every compatible official and custom profile overlay in one
+source build and package exactly one `_wrapper`, one adjacent libcurl runtime, and one profile manifest in one
+native directory.
+
+Do not build or package one wrapper/runtime directory per Chrome version, site variant, or semantic alias. Do
+not make curl_cffi or scrapy_cffi select native directories per request. Activate one directory once per
+process; select one compiled native target per request through `impersonate` or a semantic alias. If requested
+profiles cannot coexist in one runtime, fail and report the native conflict instead of silently shipping
+profile-sharded backends.
+
 ## Select the integration route
 
-1. **External native backend plus adapter (preferred)**: build an ABI-matched `_wrapper` against the custom
-   dynamic libcurl, load it before curl_cffi, and map stable semantic profile names per request.
+1. **External native backend plus adapter (preferred)**: build one ABI-matched `_wrapper` against the shared
+   multi-profile dynamic libcurl, load one native directory before curl_cffi, bulk-register semantic mappings,
+   and select a compiled profile per request.
 2. **Minimal curl_cffi fork/wheel**: use only when a self-contained distribution is required. Preserve the
    vendor Session/AsyncSession behavior and limit changes to native linking, target registration, packaging,
    and tests.
@@ -66,8 +82,9 @@ patches. When direct patch editing requires maintainer/user confirmation, use an
 after official patches and before compilation, then ask before converting it into the maintained patchset.
 Fail if the insertion anchor or upstream source contract changed; never silently inject at a guessed location.
 
-Treat the overlay, profile definition, upstream commit, toolchain, and every dependency lock as candidate
-identity. Rebuild from a clean source/build directory before promotion.
+Treat the ordered profile set, every overlay, upstream commit, toolchain, and dependency lock as one candidate
+identity. Apply the whole profile set before compilation and rebuild it from one clean source/build directory
+before promotion.
 
 ## Extract and model an authorized profile
 
@@ -90,9 +107,10 @@ library/import library. On Windows, distinguish the static `.lib` from the DLL i
 verify SONAME and loader path. Confirm the wrapper's actual imports with a platform tool; do not trust build
 arguments alone.
 
-The Python extension suffix must match the target interpreter ABI and platform. Stage the wrapper beside its
-matching runtime library, hash both, and keep them one atomic backend generation. Loading a custom DLL next to
-a wheel that statically embeds another libcurl is a false integration even if `ffi.dlopen()` succeeds.
+The Python extension suffix must match the target interpreter ABI and platform. Stage the sole wrapper beside
+its sole matching runtime library and shared profile manifest, hash them, and keep them as one atomic
+multi-profile backend generation. Loading a custom DLL next to a wheel that statically embeds another libcurl
+is a false integration even if `ffi.dlopen()` succeeds.
 
 ## Add the request-scoped adapter
 
@@ -100,8 +118,9 @@ Activate the external wrapper before importing curl_cffi or scrapy_cffi. Make ac
 same native directory and reject switching backend generations in one process. Retain Windows DLL-directory
 handles. Preserve causes when the extension or adjacent library fails to load.
 
-Keep a framework-owned registry mapping stable semantic names to native target strings. Unknown official
-vendor targets may pass through only when that is the declared compatibility behavior. Wrap or inject
+Load one manifest and bulk-register its semantic-name-to-native-target mappings during native activation. Keep
+a framework-owned registry mapping stable semantic names to native target strings. Unknown official vendor
+targets may pass through only when that is the declared compatibility behavior. Wrap or inject
 Session/AsyncSession rather than copying their connection, cookie, callback, WebSocket, or async lifecycle.
 Keep scrapy_cffi optional and lazily imported; return its normal request type with only the resolved
 `impersonate` value changed.
@@ -111,18 +130,20 @@ project settings or the adapter contract.
 
 ## Validate by layers
 
-Follow [validation-matrix.md](references/validation-matrix.md) and historical failures in
-[verified-history-lessons.md](references/verified-history-lessons.md). At minimum verify:
+Follow [validation-matrix.md](references/validation-matrix.md) and generic recovery gates in
+[failure-modes.md](references/failure-modes.md). At minimum verify:
 
 1. clean upstream baseline build and feature list;
 2. overlay idempotency and clean rebuild;
 3. native CLI and direct `curl_easy_impersonate` target probe;
 4. wrapper import table, ABI, adjacent-library resolution, and native version;
-5. semantic custom profile, native custom name, an official profile, and no-profile request paths;
+5. multiple custom profiles, their native names, an official profile, and the no-profile path through the same
+   directory, process, and Session;
 6. synchronous and asynchronous curl_cffi flows;
 7. scrapy_cffi request mapping and one real downloader transport flow when supported;
 8. clean-environment install on every declared platform/interpreter row;
-9. artifact hashes, redaction scan, cleanup, and unsupported cells.
+9. exactly one wrapper/runtime pair and one shared profile manifest for each target axis;
+10. artifact hashes, redaction scan, cleanup, and unsupported cells.
 
 Record variable fingerprints rather than forcing a fixed JA3 assertion. Compare multiple protocol fields and
 the capture-derived invariants. Classify transient checker/network failures before one bounded manual rerun;
@@ -135,8 +156,8 @@ Create a project-local `curl-impersonate-integration.json` from
 python scripts/check_integration_readiness.py <project-root> --manifest curl-impersonate-integration.json
 ```
 
-The checker validates portable paths, exact hashes, unique profile mappings, ABI declarations, and required
-artifact roles. It does not prove runtime fingerprint fidelity.
+The checker validates portable paths, exact hashes, unique profile mappings, ABI declarations, one bundle
+directory and exact bundle-role cardinality per target axis. It does not prove runtime fingerprint fidelity.
 
 ## Finish
 

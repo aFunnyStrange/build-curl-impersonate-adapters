@@ -12,6 +12,10 @@
     {
       "semanticName": "browser-profile-name",
       "nativeTarget": "browser_profile_name"
+    },
+    {
+      "semanticName": "another-browser-profile",
+      "nativeTarget": "another_browser_profile"
     }
   ],
   "artifacts": [
@@ -21,17 +25,29 @@
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     {
+      "role": "profile-overlay",
+      "path": "profile/another_browser_profile.inc",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
       "role": "native-wrapper",
-      "platform": "windows-amd64",
-      "pythonAbi": "cp312",
-      "path": "artifacts/windows-amd64/_wrapper.cp312-win_amd64.pyd",
+      "platform": "replace-with-target-platform",
+      "pythonAbi": "replace-with-python-abi",
+      "path": "artifacts/platform/native-wrapper-file",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     {
       "role": "runtime-library",
-      "platform": "windows-amd64",
-      "pythonAbi": "cp312",
-      "path": "artifacts/windows-amd64/libcurl-impersonate.dll",
+      "platform": "replace-with-target-platform",
+      "pythonAbi": "replace-with-python-abi",
+      "path": "artifacts/platform/runtime-library-file",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "role": "profile-manifest",
+      "platform": "replace-with-target-platform",
+      "pythonAbi": "replace-with-python-abi",
+      "path": "artifacts/platform/profiles-manifest-file",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     }
   ]
